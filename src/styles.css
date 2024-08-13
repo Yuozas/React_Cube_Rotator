@@ -1,0 +1,123 @@
+body {
+  background-color: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.cubeWrapper {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.cube {
+  font-family: monospace;
+  font-size: 8px;
+  line-height: 1;
+  white-space: pre;
+}
+
+.controls {
+  background: rgba(30, 30, 30, 0.8);
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  margin-bottom: 20px;
+}
+
+.controls label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+input[type="range"] {
+  width: 200px;
+  margin: 10px 0;
+  -webkit-appearance: none;
+  background: transparent;
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: #3a3a3a;
+  border-radius: 2px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: #00ffff;
+  cursor: pointer;
+  margin-top: -6px;
+}
+
+input[type="range"]:focus::-webkit-slider-runnable-track {
+  background: #4a4a4a;
+}
+
+.value-display {
+  font-size: 14px;
+  color: #00ffff;
+  margin-top: 5px;
+}
+
+.rotation-mode {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.rotation-mode span {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.rotation-mode label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="radio"]:checked {
+  background-color: #00ffff;
+  box-shadow: 0 0 5px #00ffff;
+}
+
+input[type="radio"]:hover {
+  box-shadow: 0 0 5px #00ffff;
+}
