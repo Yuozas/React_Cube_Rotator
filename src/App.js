@@ -218,47 +218,49 @@ const App = () => {
         <pre className="cube">{cubeText}</pre>
       </div>
       <div className="controls">
-        {[
-          {
-            label: "Rotation Speed",
-            key: "rotationSpeed",
-            min: 0.1,
-            max: 5,
-            step: 0.1,
-          },
-          { label: "Cube Size", key: "cubeSize", min: 5, max: 30, step: 1 },
-          {
-            label: "Distance from camera",
-            key: "distanceFromCamera",
-            min: 5,
-            max: 200,
-            step: 1,
-          },
-          {
-            label: "Cube Density",
-            key: "cubeDensity",
-            min: 0.1,
-            max: 1,
-            step: 0.1,
-          },
-        ].map(({ label, key, min, max, step }) => (
-          <label key={key}>
-            {label}
-            <input
-              type="range"
-              min={min}
-              max={max}
-              step={step}
-              value={settings[key]}
-              onChange={(e) => updateSetting(key, parseFloat(e.target.value))}
-            />
-            <span className="value-display">
-              {settings[key].toFixed(
-                key === "rotationSpeed" || key === "cubeDensity" ? 1 : 0
-              )}
-            </span>
-          </label>
-        ))}
+        <div className="sliders-container">
+          {[
+            {
+              label: "Rotation Speed",
+              key: "rotationSpeed",
+              min: 0.1,
+              max: 5,
+              step: 0.1,
+            },
+            { label: "Cube Size", key: "cubeSize", min: 5, max: 30, step: 1 },
+            {
+              label: "Distance from camera",
+              key: "distanceFromCamera",
+              min: 5,
+              max: 200,
+              step: 1,
+            },
+            {
+              label: "Cube Density",
+              key: "cubeDensity",
+              min: 0.1,
+              max: 1,
+              step: 0.1,
+            },
+          ].map(({ label, key, min, max, step }) => (
+            <div className="slider" key={key}>
+              <label>{label}</label>
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={settings[key]}
+                onChange={(e) => updateSetting(key, parseFloat(e.target.value))}
+              />
+              <span className="value-display">
+                {settings[key].toFixed(
+                  key === "rotationSpeed" || key === "cubeDensity" ? 1 : 0
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
         <div className="rotation-mode">
           <span>Rotation Mode:</span>
           {Object.keys(rotationAlgorithms).map((mode) => (
