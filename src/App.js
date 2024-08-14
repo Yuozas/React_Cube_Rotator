@@ -4,13 +4,12 @@ import "./styles.css";
 const WIDTH = 80;
 const HEIGHT = 44;
 const K1 = 40;
-const INCREMENT_SPEED = 0.6;
 
 const DEFAULT_SETTINGS = {
   DISTANCE_FROM_CAM: 27,
   ROTATION_SPEED: 0.5,
   CUBE_SIZE: 7,
-  CUBE_DENSITY: 0.6,
+  CUBE_DENSITY: 0.2,
   ROTATION_MODE: "normal",
 };
 
