@@ -55,6 +55,8 @@ const App = () => {
     const sinA = Math.sin(A),
       cosA = Math.cos(A);
     const factor = 1 / Math.sqrt(3);
+
+    // Rotation matrix for diagonal axis rotation
     const rotationMatrix = [
       [
         cosA + (1 - cosA) / 3,
@@ -73,35 +75,41 @@ const App = () => {
       ],
     ];
 
-    return {
-      x:
-        factor *
-        (rotationMatrix[0][0] * i +
-          rotationMatrix[0][1] * j +
-          rotationMatrix[0][2] * k) *
-        size,
-      y:
-        factor *
-        (rotationMatrix[1][0] * i +
-          rotationMatrix[1][1] * j +
-          rotationMatrix[1][2] * k) *
-        size,
-      z:
-        factor *
-        (rotationMatrix[2][0] * i +
-          rotationMatrix[2][1] * j +
-          rotationMatrix[2][2] * k) *
-        size,
-    };
+    // Apply rotation and scale
+    const x =
+      (rotationMatrix[0][0] * i +
+        rotationMatrix[0][1] * j +
+        rotationMatrix[0][2] * k) *
+      size;
+    const y =
+      (rotationMatrix[1][0] * i +
+        rotationMatrix[1][1] * j +
+        rotationMatrix[1][2] * k) *
+      size;
+    const z =
+      (rotationMatrix[2][0] * i +
+        rotationMatrix[2][1] * j +
+        rotationMatrix[2][2] * k) *
+      size;
+
+    return { x, y, z };
   }, []);
 
   const calculateForSurface = useCallback(
     (cubeX, cubeY, cubeZ, ch, buffer) => {
       const { distanceFromCamera, rotationMode, cubeSize } = settings;
-      let coords =
-        rotationMode === "diagonal"
-          ? calculateDiagonalRotation(cubeX, cubeY, cubeZ, cubeSize / 0.5)
-          : calculateCoordinates(cubeX, cubeY, cubeZ);
+      let coords;
+
+      if (rotationMode === "diagonal") {
+        coords = calculateDiagonalRotation(
+          cubeX / cubeSize,
+          cubeY / cubeSize,
+          cubeZ / cubeSize,
+          cubeSize
+        );
+      } else {
+        coords = calculateCoordinates(cubeX, cubeY, cubeZ);
+      }
 
       coords.z += distanceFromCamera;
       const ooz = 1 / coords.z;
