@@ -1,119 +1,129 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./styles.css";
 
 const WIDTH = 80;
 const HEIGHT = 44;
 const K1 = 40;
-const DEFAULT_DISTANCE_FROM_CAM = 27;
-const DEFAULT_ROTATION_SPEED = 0.5;
-const DEFAULT_CUBE_SIZE = 7;
-const DEFAULT_ROTATION_MODE = "normal";
 const INCREMENT_SPEED = 0.6;
 
+const DEFAULT_SETTINGS = {
+  DISTANCE_FROM_CAM: 27,
+  ROTATION_SPEED: 0.5,
+  CUBE_SIZE: 7,
+  ROTATION_MODE: "normal",
+};
+
 const App = () => {
-  const [distanceFromCamera, setDistanceFromCamera] = useState(
-    DEFAULT_DISTANCE_FROM_CAM
-  );
-  const [rotationSpeed, setRotationSpeed] = useState(DEFAULT_ROTATION_SPEED);
-  const [cubeSize, setCubeSize] = useState(DEFAULT_CUBE_SIZE);
-  const [rotationMode, setRotationMode] = useState(DEFAULT_ROTATION_MODE);
+  const [settings, setSettings] = useState({
+    distanceFromCamera: DEFAULT_SETTINGS.DISTANCE_FROM_CAM,
+    rotationSpeed: DEFAULT_SETTINGS.ROTATION_SPEED,
+    cubeSize: DEFAULT_SETTINGS.CUBE_SIZE,
+    rotationMode: DEFAULT_SETTINGS.ROTATION_MODE,
+  });
   const [cubeText, setCubeText] = useState("");
   const animationRef = useRef();
   const anglesRef = useRef({ A: 0, B: 0, C: 0 });
 
-  function calculateX(i, j, k) {
+  const calculateCoordinates = useCallback((i, j, k) => {
     const { A, B, C } = anglesRef.current;
-    return (
-      j * Math.sin(A) * Math.sin(B) * Math.cos(C) -
-      k * Math.cos(A) * Math.sin(B) * Math.cos(C) +
-      j * Math.cos(A) * Math.sin(C) +
-      k * Math.sin(A) * Math.sin(C) +
-      i * Math.cos(B) * Math.cos(C)
-    );
-  }
+    const sinA = Math.sin(A),
+      cosA = Math.cos(A);
+    const sinB = Math.sin(B),
+      cosB = Math.cos(B);
+    const sinC = Math.sin(C),
+      cosC = Math.cos(C);
 
-  function calculateY(i, j, k) {
-    const { A, B, C } = anglesRef.current;
-    return (
-      j * Math.cos(A) * Math.cos(C) +
-      k * Math.sin(A) * Math.cos(C) -
-      j * Math.sin(A) * Math.sin(B) * Math.sin(C) +
-      k * Math.cos(A) * Math.sin(B) * Math.sin(C) -
-      i * Math.cos(B) * Math.sin(C)
-    );
-  }
+    return {
+      x:
+        j * sinA * sinB * cosC -
+        k * cosA * sinB * cosC +
+        j * cosA * sinC +
+        k * sinA * sinC +
+        i * cosB * cosC,
+      y:
+        j * cosA * cosC +
+        k * sinA * cosC -
+        j * sinA * sinB * sinC +
+        k * cosA * sinB * sinC -
+        i * cosB * sinC,
+      z: k * cosA * cosB - j * sinA * cosB + i * sinB,
+    };
+  }, []);
 
-  function calculateZ(i, j, k) {
-    const { A, B } = anglesRef.current;
-    return (
-      k * Math.cos(A) * Math.cos(B) -
-      j * Math.sin(A) * Math.cos(B) +
-      i * Math.sin(B)
-    );
-  }
-
-  function calculateDiagonalRotation(i, j, k, size) {
+  const calculateDiagonalRotation = useCallback((i, j, k, size) => {
     const { A } = anglesRef.current;
-    const sinA = Math.sin(A);
-    const cosA = Math.cos(A);
-    const x =
-      (1 / Math.sqrt(3)) *
-      ((cosA + (1 - cosA) / 3) * i +
-        ((1 - cosA) / 3 - (Math.sqrt(3) * sinA) / 3) * j +
-        ((1 - cosA) / 3 + (Math.sqrt(3) * sinA) / 3) * k) *
-      size;
-    const y =
-      (1 / Math.sqrt(3)) *
-      (((1 - cosA) / 3 + (Math.sqrt(3) * sinA) / 3) * i +
-        (cosA + (1 - cosA) / 3) * j +
-        ((1 - cosA) / 3 - (Math.sqrt(3) * sinA) / 3) * k) *
-      size;
-    const z =
-      (1 / Math.sqrt(3)) *
-      (((1 - cosA) / 3 - (Math.sqrt(3) * sinA) / 3) * i +
-        ((1 - cosA) / 3 + (Math.sqrt(3) * sinA) / 3) * j +
-        (cosA + (1 - cosA) / 3) * k) *
-      size;
-    return { x, y, z };
-  }
+    const sinA = Math.sin(A),
+      cosA = Math.cos(A);
+    const factor = 1 / Math.sqrt(3);
+    const rotationMatrix = [
+      [
+        cosA + (1 - cosA) / 3,
+        (1 - cosA) / 3 - factor * sinA,
+        (1 - cosA) / 3 + factor * sinA,
+      ],
+      [
+        (1 - cosA) / 3 + factor * sinA,
+        cosA + (1 - cosA) / 3,
+        (1 - cosA) / 3 - factor * sinA,
+      ],
+      [
+        (1 - cosA) / 3 - factor * sinA,
+        (1 - cosA) / 3 + factor * sinA,
+        cosA + (1 - cosA) / 3,
+      ],
+    ];
 
-  function calculateForSurface(cubeX, cubeY, cubeZ, ch, buffer) {
-    let x, y, z;
+    return {
+      x:
+        factor *
+        (rotationMatrix[0][0] * i +
+          rotationMatrix[0][1] * j +
+          rotationMatrix[0][2] * k) *
+        size,
+      y:
+        factor *
+        (rotationMatrix[1][0] * i +
+          rotationMatrix[1][1] * j +
+          rotationMatrix[1][2] * k) *
+        size,
+      z:
+        factor *
+        (rotationMatrix[2][0] * i +
+          rotationMatrix[2][1] * j +
+          rotationMatrix[2][2] * k) *
+        size,
+    };
+  }, []);
 
-    if (rotationMode === "diagonal") {
-      const coords = calculateDiagonalRotation(
-        cubeX,
-        cubeY,
-        cubeZ,
-        cubeSize / 0.5
-      );
-      x = coords.x;
-      y = coords.y;
-      z = coords.z;
-    } else {
-      x = calculateX(cubeX, cubeY, cubeZ);
-      y = calculateY(cubeX, cubeY, cubeZ);
-      z = calculateZ(cubeX, cubeY, cubeZ);
-    }
+  const calculateForSurface = useCallback(
+    (cubeX, cubeY, cubeZ, ch, buffer) => {
+      const { distanceFromCamera, rotationMode, cubeSize } = settings;
+      let coords =
+        rotationMode === "diagonal"
+          ? calculateDiagonalRotation(cubeX, cubeY, cubeZ, cubeSize / 0.5)
+          : calculateCoordinates(cubeX, cubeY, cubeZ);
 
-    z += distanceFromCamera;
-    const ooz = 1 / z;
-    const xp = Math.floor(WIDTH / 2 + K1 * ooz * x * 2);
-    const yp = Math.floor(HEIGHT / 2 + K1 * ooz * y);
-    const idx = xp + yp * WIDTH;
-    if (idx >= 0 && idx < WIDTH * HEIGHT) {
-      if (ooz > buffer.zBuffer[idx]) {
+      coords.z += distanceFromCamera;
+      const ooz = 1 / coords.z;
+      const xp = Math.floor(WIDTH / 2 + K1 * ooz * coords.x * 2);
+      const yp = Math.floor(HEIGHT / 2 + K1 * ooz * coords.y);
+      const idx = xp + yp * WIDTH;
+
+      if (idx >= 0 && idx < WIDTH * HEIGHT && ooz > buffer.zBuffer[idx]) {
         buffer.zBuffer[idx] = ooz;
         buffer.output[idx] = ch;
       }
-    }
-  }
+    },
+    [settings, calculateCoordinates, calculateDiagonalRotation]
+  );
 
-  function renderCube() {
+  const renderCube = useCallback(() => {
     const buffer = {
       output: new Array(WIDTH * HEIGHT).fill(" "),
-      zBuffer: new Array(WIDTH * HEIGHT).fill(0)
+      zBuffer: new Array(WIDTH * HEIGHT).fill(0),
     };
+    const { cubeSize } = settings;
+
     for (let cubeX = -cubeSize; cubeX < cubeSize; cubeX += INCREMENT_SPEED) {
       for (let cubeY = -cubeSize; cubeY < cubeSize; cubeY += INCREMENT_SPEED) {
         calculateForSurface(cubeX, cubeY, -cubeSize, "@", buffer);
@@ -124,51 +134,57 @@ const App = () => {
         calculateForSurface(cubeX, cubeSize, cubeY, "+", buffer);
       }
     }
+
     return buffer.output.reduce((acc, char, i) => {
       if (i % WIDTH === 0 && i !== 0) acc += "\n";
       return acc + char;
     }, "");
-  }
+  }, [settings, calculateForSurface]);
 
   const rotationAlgorithms = {
-    normal: () => {
-      anglesRef.current.A += 0.01 * rotationSpeed;
-      anglesRef.current.B += 0.01 * rotationSpeed;
-      anglesRef.current.C += 0.02 * rotationSpeed;
+    normal: (speed) => {
+      anglesRef.current.A += 0.01 * speed;
+      anglesRef.current.B += 0.01 * speed;
+      anglesRef.current.C += 0.02 * speed;
     },
-    wobble: () => {
-      const t = Date.now() * 0.002 * rotationSpeed;
+    wobble: (speed) => {
+      const t = Date.now() * 0.002 * speed;
       anglesRef.current.A = Math.sin(t * 4) * 0.3;
       anglesRef.current.B = Math.cos(t * 2.8) * 0.3;
       anglesRef.current.C = Math.sin(t * 2) * 0.3;
     },
-    spiral: () => {
+    spiral: (speed) => {
       const t = Date.now() * 0.0001;
-      const spiralSpeed = 0.05 * rotationSpeed;
+      const spiralSpeed = 0.05 * speed;
       anglesRef.current.A += spiralSpeed * Math.sin(t);
       anglesRef.current.B += spiralSpeed * Math.cos(t);
-      anglesRef.current.C += 0.001 * rotationSpeed;
+      anglesRef.current.C += 0.001 * speed;
     },
-    chaos: () => {
-      anglesRef.current.A += (Math.random() - 0.5) * 0.2 * rotationSpeed;
-      anglesRef.current.B += (Math.random() - 0.5) * 0.2 * rotationSpeed;
-      anglesRef.current.C += (Math.random() - 0.5) * 0.2 * rotationSpeed;
+    chaos: (speed) => {
+      anglesRef.current.A += (Math.random() - 0.5) * 0.2 * speed;
+      anglesRef.current.B += (Math.random() - 0.5) * 0.2 * speed;
+      anglesRef.current.C += (Math.random() - 0.5) * 0.2 * speed;
     },
-    diagonal: () => {
-      anglesRef.current.A += 0.01 * rotationSpeed; // Rotate along diagonal axis
-    }
+    diagonal: (speed) => {
+      anglesRef.current.A += 0.01 * speed;
+    },
   };
 
-  const animate = () => {
-    rotationAlgorithms[rotationMode]();
+  const animate = useCallback(() => {
+    const { rotationMode, rotationSpeed } = settings;
+    rotationAlgorithms[rotationMode](rotationSpeed);
     setCubeText(renderCube());
     animationRef.current = requestAnimationFrame(animate);
-  };
+  }, [settings, renderCube]);
 
   useEffect(() => {
     animationRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [rotationMode, rotationSpeed, cubeSize, distanceFromCamera]);
+  }, [animate]);
+
+  const updateSetting = (key, value) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
 
   return (
     <>
@@ -176,42 +192,38 @@ const App = () => {
         <pre className="cube">{cubeText}</pre>
       </div>
       <div className="controls">
-        <label>
-          Rotation Speed
-          <input
-            type="range"
-            min="0.1"
-            max="5"
-            step="0.1"
-            value={rotationSpeed}
-            onChange={(e) => setRotationSpeed(parseFloat(e.target.value))}
-          />
-          <span className="value-display">{rotationSpeed.toFixed(1)}</span>
-        </label>
-        <label>
-          Cube Size
-          <input
-            type="range"
-            min="5"
-            max="30"
-            step="1"
-            value={cubeSize}
-            onChange={(e) => setCubeSize(parseInt(e.target.value))}
-          />
-          <span className="value-display">{cubeSize}</span>
-        </label>
-        <label>
-          Dinstance from camera
-          <input
-            type="range"
-            min="5"
-            max="200"
-            step="1"
-            value={distanceFromCamera}
-            onChange={(e) => setDistanceFromCamera(parseInt(e.target.value))}
-          />
-          <span className="value-display">{distanceFromCamera}</span>
-        </label>
+        {[
+          {
+            label: "Rotation Speed",
+            key: "rotationSpeed",
+            min: 0.1,
+            max: 5,
+            step: 0.1,
+          },
+          { label: "Cube Size", key: "cubeSize", min: 5, max: 30, step: 1 },
+          {
+            label: "Distance from camera",
+            key: "distanceFromCamera",
+            min: 5,
+            max: 200,
+            step: 1,
+          },
+        ].map(({ label, key, min, max, step }) => (
+          <label key={key}>
+            {label}
+            <input
+              type="range"
+              min={min}
+              max={max}
+              step={step}
+              value={settings[key]}
+              onChange={(e) => updateSetting(key, parseFloat(e.target.value))}
+            />
+            <span className="value-display">
+              {settings[key].toFixed(key === "rotationSpeed" ? 1 : 0)}
+            </span>
+          </label>
+        ))}
         <div className="rotation-mode">
           <span>Rotation Mode:</span>
           {Object.keys(rotationAlgorithms).map((mode) => (
@@ -219,8 +231,8 @@ const App = () => {
               <input
                 type="radio"
                 value={mode}
-                checked={rotationMode === mode}
-                onChange={() => setRotationMode(mode)}
+                checked={settings.rotationMode === mode}
+                onChange={() => updateSetting("rotationMode", mode)}
               />
               {mode.charAt(0).toUpperCase() + mode.slice(1)}
             </label>
