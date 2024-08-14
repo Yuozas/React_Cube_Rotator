@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = {
   DISTANCE_FROM_CAM: 27,
   ROTATION_SPEED: 0.5,
   CUBE_SIZE: 7,
+  CUBE_DENSITY: 0.6,
   ROTATION_MODE: "normal",
 };
 
@@ -18,6 +19,7 @@ const App = () => {
     distanceFromCamera: DEFAULT_SETTINGS.DISTANCE_FROM_CAM,
     rotationSpeed: DEFAULT_SETTINGS.ROTATION_SPEED,
     cubeSize: DEFAULT_SETTINGS.CUBE_SIZE,
+    cubeDensity: DEFAULT_SETTINGS.CUBE_DENSITY,
     rotationMode: DEFAULT_SETTINGS.ROTATION_MODE,
   });
   const [cubeText, setCubeText] = useState("");
@@ -112,14 +114,17 @@ const App = () => {
       }
 
       coords.z += distanceFromCamera;
+
       const ooz = 1 / coords.z;
       const xp = Math.floor(WIDTH / 2 + K1 * ooz * coords.x * 2);
       const yp = Math.floor(HEIGHT / 2 + K1 * ooz * coords.y);
-      const idx = xp + yp * WIDTH;
 
-      if (idx >= 0 && idx < WIDTH * HEIGHT && ooz > buffer.zBuffer[idx]) {
-        buffer.zBuffer[idx] = ooz;
-        buffer.output[idx] = ch;
+      if (xp >= 0 && xp < WIDTH && yp >= 0 && yp < HEIGHT) {
+        const idx = xp + yp * WIDTH;
+        if (ooz > buffer.zBuffer[idx]) {
+          buffer.zBuffer[idx] = ooz;
+          buffer.output[idx] = ch;
+        }
       }
     },
     [settings, calculateCoordinates, calculateDiagonalRotation]
@@ -130,16 +135,30 @@ const App = () => {
       output: new Array(WIDTH * HEIGHT).fill(" "),
       zBuffer: new Array(WIDTH * HEIGHT).fill(0),
     };
-    const { cubeSize } = settings;
+    const { cubeSize, cubeDensity } = settings;
 
-    for (let cubeX = -cubeSize; cubeX < cubeSize; cubeX += INCREMENT_SPEED) {
-      for (let cubeY = -cubeSize; cubeY < cubeSize; cubeY += INCREMENT_SPEED) {
-        calculateForSurface(cubeX, cubeY, -cubeSize, "@", buffer);
-        calculateForSurface(cubeSize, cubeY, cubeX, "$", buffer);
-        calculateForSurface(-cubeSize, cubeY, -cubeX, "~", buffer);
-        calculateForSurface(-cubeX, cubeY, cubeSize, "#", buffer);
-        calculateForSurface(cubeX, -cubeSize, -cubeY, ";", buffer);
-        calculateForSurface(cubeX, cubeSize, cubeY, "+", buffer);
+    const renderPoint = (x, y, z, ch) => {
+      calculateForSurface(x * cubeSize, y * cubeSize, z * cubeSize, ch, buffer);
+    };
+
+    // Render cube edges
+    for (let i = -1; i <= 1; i += 2) {
+      for (let j = -1; j <= 1; j += 2) {
+        for (let k = -1; k <= 1; k += 2) {
+          renderPoint(i, j, k, "+");
+        }
+      }
+    }
+
+    // Render cube faces with density control
+    for (let i = -1; i <= 1; i += cubeDensity) {
+      for (let j = -1; j <= 1; j += cubeDensity) {
+        renderPoint(i, j, -1, "@"); // Front face
+        renderPoint(i, j, 1, "#"); // Back face
+        renderPoint(-1, i, j, "~"); // Left face
+        renderPoint(1, i, j, "$"); // Right face
+        renderPoint(i, -1, j, ";"); // Bottom face
+        renderPoint(i, 1, j, "+"); // Top face
       }
     }
 
@@ -216,6 +235,13 @@ const App = () => {
             max: 200,
             step: 1,
           },
+          {
+            label: "Cube Density",
+            key: "cubeDensity",
+            min: 0.1,
+            max: 1,
+            step: 0.1,
+          },
         ].map(({ label, key, min, max, step }) => (
           <label key={key}>
             {label}
@@ -228,7 +254,9 @@ const App = () => {
               onChange={(e) => updateSetting(key, parseFloat(e.target.value))}
             />
             <span className="value-display">
-              {settings[key].toFixed(key === "rotationSpeed" ? 1 : 0)}
+              {settings[key].toFixed(
+                key === "rotationSpeed" || key === "cubeDensity" ? 1 : 0
+              )}
             </span>
           </label>
         ))}
